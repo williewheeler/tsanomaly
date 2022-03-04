@@ -1,6 +1,5 @@
 import numpy as np
 import pandas as pd
-import matplotlib.pyplot as plt
 
 from math import *
 
@@ -53,13 +52,11 @@ def pewma():
     return None
 
 
-def plot_anomalies(df):
+def plot_anomalies(ax, df, title):
     anom = df.loc[df["anomaly"], "x"]
-    fig = plt.figure(figsize=(14, 2))
-    ax = fig.add_subplot()
+    ax.set_title(title)
     ax.plot(df["x"], linestyle="-")
     ax.plot(df["mean"], color="k", alpha=0.2, linestyle="--")
     ax.plot(df["upper"], color="k", alpha=0.2, linestyle="--")
     ax.plot(df["lower"], color="k", alpha=0.2, linestyle="--")
     ax.scatter(x=anom.index, y=anom.values, color="r")
-    plt.show()
