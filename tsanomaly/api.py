@@ -65,7 +65,7 @@ def pewma(x, alpha, beta, m, T=5):
     for t in range(1, n):
         if t < T:
             alpha_t = 1.0 / t
-        else if sigma[t-1] == 0:
+        elif sigma[t-1] == 0:
             alpha_t = alpha
         else:
             # Use z-score to calculate probability
