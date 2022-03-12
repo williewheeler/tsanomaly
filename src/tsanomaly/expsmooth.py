@@ -4,81 +4,113 @@ import pandas as pd
 from math import *
 
 
-def _to_result(x, mu, sigma, m):
-    upper = mu + m * sigma
-    lower = mu - m * sigma
+def _to_result(x, m, s, k):
+    """Produces a data frame containing the anomaly detection results.
+    
+    Parameters
+    ----------
+    x : pd.Series
+        Time series data
+    m : pd.Series
+        Mean estimate
+    s : pd.Series
+        Standard deviation estimate
+    k : float
+        Band multiplier
+    
+    Returns
+    -------
+    pd.DataFrame
+        Data frame containing anomaly detection results
+    """
+    
+    upper = m + k * s
+    lower = m - k * s
     anom = (x < lower) | (x > upper)
     return pd.DataFrame({
         "x" : x,
-        "mean" : mu,
+        "mean" : m,
         "upper" : upper,
         "lower" : lower,
         "anomaly" : anom,
     })
 
 
-def ewma(x, alpha, m, T=5):
+def ewma(x, alpha, k, T=5):
     """
-    Anomaly detection based on the exponentially-weighted moving average.
+    Anomaly detection based on the exponentially weighted moving average.
     
     Parameters
     ----------
-    x : a pandas series
-    alpha : current weight in (0.0, 1.0]
-    m : band multiplier
-    T : training period
+    x : pd.Series
+        Time series data
+    alpha : float
+        Current weight in (0.0, 1.0]
+    k : float
+        Band multiplier
+    T : int
+        Training period
     
     Returns
     -------
-    Pandas DataFrame containing EWMA anomaly results
+    pd.DataFrame
+        Data frame containing anomaly detection results
     """
 
     ewm = x.shift().ewm(alpha=alpha, min_periods=T)
-    return _to_result(x, ewm.mean(), ewm.std(), m)
+    return _to_result(x, ewm.mean(), ewm.std(), k)
 
 
-def pewma(x, alpha, beta, m, T=5):
+def pewma(x, alpha, beta, k, T=5):
     """
-    Anomaly detection based on the probabilistic exponentially-weighted moving average.
+    Anomaly detection based on the probabilistic exponentially weighted moving average.
 
     Parameters
     ----------
-    X : data
-    alpha : current weight in [0.0, 1.0]. Note that this is the reverse of what's in the paper
-            (i.e., they use alpha for the history weight)
-    beta : probability weight, applied to alpha
-    m : band multiplier
-    T : training period
+    x : pd.Series
+        Time series data
+    alpha : float
+        Current weight in [0.0, 1.0]. Note that this is the reverse of what's in the
+        paper (i.e., they use alpha for the history weight)
+    beta : float
+        Probability weight, applied to alpha
+    k : float
+        Band multiplier
+    T : int
+        Training period
     
     Returns
     -------
-    Pandas DataFrame containing PEWMA anomaly results
+    pd.DataFrame
+        Data frame containing anomaly detection results
     """
     PR_DENOM = sqrt(2.0 * pi)
     
-    # Flip this to match pandas EWMA
+    # Flip this to match pandas EWMA.
+    # So alpha is the weight for the most recent value, and gamma
+    # is the weight for the most recent estimate (i.e., history).
     gamma = 1.0 - alpha
     
     n = len(x)
     s1 = x[0]
     s2 = x[0] * x[0]
-    mu = np.repeat(x[0], n)
-    sigma = np.repeat(0.0, n)
+    m = np.repeat(x[0], n)
+    s = np.repeat(0.0, n)
     
     for t in range(1, n):
         if t < T:
             gamma_t = 1.0 - 1.0 / t
-        elif sigma[t-1] == 0:
+        elif s[t-1] == 0:
             gamma_t = gamma
         else:
             # Use z-score to calculate probability
-            z = (x[t-1] - mu[t-1]) / sigma[t-1]
+            z = (x[t-1] - m[t-1]) / s[t-1]
             p = np.exp(-0.5 * z * z) / PR_DENOM
             gamma_t = (1.0 - beta * p) * gamma
         
         s1 = gamma_t * s1 + (1.0 - gamma_t) * x[t-1]
         s2 = gamma_t * s2 + (1.0 - gamma_t) * x[t-1] * x[t-1]
-        mu[t] = s1
-        sigma[t] = sqrt(s2 - s1 * s1)
+        m[t] = s1
+        s[t] = sqrt(s2 - s1 * s1)
         
-    return _to_result(x, mu, sigma, m)
+    return _to_result(x, m, s, k)
