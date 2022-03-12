@@ -56,6 +56,9 @@ def pewma(x, alpha, beta, m, T=5):
     """
     PR_DENOM = sqrt(2.0 * pi)
     
+    # Flip this to match pandas EWMA
+    gamma = 1.0 - alpha
+    
     n = len(x)
     s1 = x[0]
     s2 = x[0] * x[0]
@@ -64,17 +67,17 @@ def pewma(x, alpha, beta, m, T=5):
     
     for t in range(1, n):
         if t < T:
-            alpha_t = 1.0 / t
+            gamma_t = 1.0 - 1.0 / t
         elif sigma[t-1] == 0:
-            alpha_t = alpha
+            gamma_t = gamma
         else:
             # Use z-score to calculate probability
             z = (x[t-1] - mu[t-1]) / sigma[t-1]
             p = np.exp(-0.5 * z * z) / PR_DENOM
-            alpha_t = (beta * p) + (1.0 + beta * p) * alpha
+            gamma_t = (1.0 - beta * p) * gamma
         
-        s1 = alpha_t * x[t-1] + (1.0 - alpha_t) * s1
-        s2 = alpha_t * x[t-1] * x[t-1] + (1.0 - alpha_t) * s2
+        s1 = gamma_t * s1 + (1.0 - gamma_t) * x[t-1]
+        s2 = gamma_t * s2 + (1.0 - gamma_t) * x[t-1] * x[t-1]
         mu[t] = s1
         sigma[t] = sqrt(s2 - s1 * s1)
         
