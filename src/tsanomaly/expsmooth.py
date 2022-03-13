@@ -37,8 +37,7 @@ def _to_result(x, m, s, k):
     })
 
 
-# FIXME This doesn't generate bands when alpha=1.0.
-# Also, shouldn't alpha=0.0 be permissible? May have to implement it myself.
+# Shouldn't alpha=0.0 be permissible? May have to implement it myself.
 def ewma(x, alpha, k, T=5):
     """
     Anomaly detection based on the exponentially weighted moving average.
@@ -61,7 +60,7 @@ def ewma(x, alpha, k, T=5):
     """
 
     ewm = x.shift().ewm(alpha=alpha, min_periods=T)
-    return _to_result(x, ewm.mean(), ewm.std(), k)
+    return _to_result(x, ewm.mean(), ewm.std(bias=True), k)
 
 
 # FIXME Not correctly incorporating the training period.
