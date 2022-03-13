@@ -30,12 +30,15 @@ def _to_result(x, m, s, k):
     return pd.DataFrame({
         "x" : x,
         "mean" : m,
+        "stdev" : s,
         "upper" : upper,
         "lower" : lower,
         "anomaly" : anom,
     })
 
 
+# FIXME This doesn't generate bands when alpha=1.0.
+# Also, shouldn't alpha=0.0 be permissible? May have to implement it myself.
 def ewma(x, alpha, k, T=5):
     """
     Anomaly detection based on the exponentially weighted moving average.
@@ -61,6 +64,8 @@ def ewma(x, alpha, k, T=5):
     return _to_result(x, ewm.mean(), ewm.std(), k)
 
 
+# FIXME Not correctly incorporating the training period.
+# Notice that the stdev starts tight even with training.
 def pewma(x, alpha, beta, k, T=5):
     """
     Anomaly detection based on the probabilistic exponentially weighted moving average.
