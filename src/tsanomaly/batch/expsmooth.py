@@ -7,9 +7,9 @@ class EwmaBatchDetector:
     """Anomaly detection based on the exponentially weighted moving average.
     
     Attributes:
-        alpha: Current weight in (0.0, 1.0]
-        k: Band multiplier
-        min_periods: Training period
+        alpha: A float current weight in (0.0, 1.0]
+        k: A float band multiplier
+        min_periods: A nonnegative int training period
     
     Typical usage example:
     
@@ -21,10 +21,9 @@ class EwmaBatchDetector:
         """Initializes a new EWMA batch detector.
 
         Args:
-            x: Time series data
-            alpha: Current weight in (0.0, 1.0]
-            k: Band multiplier
-            min_periods: Training period
+            alpha: A float current weight in (0.0, 1.0]
+            k: A float band multiplier
+            min_periods: A nonnegative int training period
         """
         
         self.alpha = alpha
@@ -35,7 +34,7 @@ class EwmaBatchDetector:
         """Runs the detector on the given series
 
         Args:
-            x: Time series data (a pandas Series)
+            x: A pandas Series containing the time series data
 
         Returns:
             A pandas DataFrame containing anomaly detection results
@@ -52,27 +51,26 @@ class PewmaBatchDetector:
     (https://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.375.2193&rep=rep1&type=pdf)
     
     Attributes:
-        alpha: Current weight in (0.0, 1.0]. Note that this is the reverse of what's in the
-            paper (i.e., they use alpha for the history weight).
-        beta: Probability weight, applied to alpha
-        k: Band multiplier
-        min_periods: Training period
+        alpha: A float current weight in (0.0, 1.0]. Note that this is the reverse of what's
+            in the paper (i.e., they use alpha for the history weight).
+        beta: A float probability weight in [0.0, 1.0], applied to alpha
+        k: A float band multiplier
+        min_periods: An nonnegative int training period
 
     Typical usage example:
     
-        ewma = EwmaBatchDetector(alpha=0.2, k=3.0, min_periods=5)
+        pewma = PewmaBatchDetector(alpha=0.2, beta=0.9, k=3.0, min_periods=5)
     """
     
     def __init__(self, alpha=0.5, beta=0.5, k=3.0, min_periods=1):
         """Initializes a new PEWMA batch detector.
 
         Args:
-            x: Time series data
-            alpha: Current weight in [0.0, 1.0]. Note that this is the reverse of what's in the
-                paper (i.e., they use alpha for the history weight).
-            beta: Probability weight, applied to alpha
-            k: Band multiplier
-            min_periods: Training period
+            alpha: A float current weight in (0.0, 1.0]. Note that this is the reverse of what's
+                in the paper (i.e., they use alpha for the history weight).
+            beta: A float probability weight in [0.0, 1.0], applied to alpha
+            k: A float band multiplier
+            min_periods: An nonnegative int training period
         """
         
         self.alpha = alpha
@@ -86,7 +84,7 @@ class PewmaBatchDetector:
         """Runs the detector on the given series
 
         Args:
-            x: Time series data (a pandas Series)
+            x: A pandas Series containing the time series data
 
         Returns:
             A pandas DataFrame containing anomaly detection results
