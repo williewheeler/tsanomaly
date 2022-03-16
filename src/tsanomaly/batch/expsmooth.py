@@ -4,25 +4,27 @@ import pandas as pd
 
 
 class EwmaBatchDetector:
-    """
-    Anomaly detection based on the exponentially weighted moving average.
+    """Anomaly detection based on the exponentially weighted moving average.
+    
+    Attributes:
+        alpha: Current weight in (0.0, 1.0]
+        k: Band multiplier
+        min_periods: Training period
+    
+    Typical usage example:
+    
+        ewma = EwmaBatchDetector(alpha=0.2, k=3.0, min_periods=5)
     """
     
     # Shouldn't alpha=0.0 be permissible? May have to implement it myself.
     def __init__(self, alpha=0.5, k=3.0, min_periods=1):
-        """
-        Initializes a new EWMA batch detector.
+        """Initializes a new EWMA batch detector.
 
-        Parameters
-        ----------
-        x : pd.Series
-            Time series data
-        alpha : float
-            Current weight in (0.0, 1.0]
-        k : float
-            Band multiplier
-        min_periods : int
-            Training period
+        Args:
+            x: Time series data
+            alpha: Current weight in (0.0, 1.0]
+            k: Band multiplier
+            min_periods: Training period
         """
         
         self.alpha = alpha
@@ -30,18 +32,13 @@ class EwmaBatchDetector:
         self.min_periods = min_periods
 
     def detect(self, x):
-        """
-        Runs the detector on the given series
+        """Runs the detector on the given series
 
-        Parameters
-        ----------
-        x : pd.Series
-            Time series data
+        Args:
+            x: Time series data (a pandas Series)
 
-        Returns
-        -------
-        pd.DataFrame
-            Data frame containing anomaly detection results
+        Returns:
+            A pandas DataFrame containing anomaly detection results
         """
 
         ewm = x.shift().ewm(alpha=self.alpha, min_periods=self.min_periods)
@@ -49,27 +46,33 @@ class EwmaBatchDetector:
 
 
 class PewmaBatchDetector:
-    """
-    Anomaly detection based on the probabilistic exponentially weighted moving average.
+    """Anomaly detection based on the probabilistic exponentially weighted moving average.
+    
+    Based on Probabilistic Reasoning for Streaming Anomaly Detection
+    (https://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.375.2193&rep=rep1&type=pdf)
+    
+    Attributes:
+        alpha: Current weight in (0.0, 1.0]. Note that this is the reverse of what's in the
+            paper (i.e., they use alpha for the history weight).
+        beta: Probability weight, applied to alpha
+        k: Band multiplier
+        min_periods: Training period
+
+    Typical usage example:
+    
+        ewma = EwmaBatchDetector(alpha=0.2, k=3.0, min_periods=5)
     """
     
     def __init__(self, alpha=0.5, beta=0.5, k=3.0, min_periods=1):
-        """
-        Initializes a new PEWMA batch detector.
+        """Initializes a new PEWMA batch detector.
 
-        Parameters
-        ----------
-        x : pd.Series
-            Time series data
-        alpha : float
-            Current weight in [0.0, 1.0]. Note that this is the reverse of what's in the
-            paper (i.e., they use alpha for the history weight)
-        beta : float
-            Probability weight, applied to alpha
-        k : float
-            Band multiplier
-        min_periods : int
-            Training period
+        Args:
+            x: Time series data
+            alpha: Current weight in [0.0, 1.0]. Note that this is the reverse of what's in the
+                paper (i.e., they use alpha for the history weight).
+            beta: Probability weight, applied to alpha
+            k: Band multiplier
+            min_periods: Training period
         """
         
         self.alpha = alpha
@@ -80,18 +83,13 @@ class PewmaBatchDetector:
     # FIXME Not correctly incorporating the training period.
     # Notice that the stdev starts tight even with training.
     def detect(self, x):
-        """
-        Runs the detector on the given series
+        """Runs the detector on the given series
 
-        Parameters
-        ----------
-        x : pd.Series
-            Time series data
+        Args:
+            x: Time series data (a pandas Series)
 
-        Returns
-        -------
-        pd.DataFrame
-            Data frame containing anomaly detection results
+        Returns:
+            A pandas DataFrame containing anomaly detection results
         """
 
         PR_DENOM = math.sqrt(2.0 * math.pi)
@@ -126,37 +124,15 @@ class PewmaBatchDetector:
         return _to_result(x, mean, std, self.k)
 
 
-def _to_result(x, m, s, k):
-    """Produces a data frame containing the anomaly detection results.
-    
-    Parameters
-    ----------
-    x : pd.Series
-        Time series data
-    m : pd.Series
-        Mean estimate
-    s : pd.Series
-        Standard deviation estimate
-    k : float
-        Band multiplier
-    
-    Returns
-    -------
-    pd.DataFrame
-        Data frame containing anomaly detection results
-    """
-    
-    upper = m + k * s
-    lower = m - k * s
+def _to_result(x, mean, std, k):
+    upper = mean + k * std
+    lower = mean - k * std
     anom = (x < lower) | (x > upper)
     return pd.DataFrame({
-        "x" : x,
-        "mean" : m,
-        "stdev" : s,
-        "upper" : upper,
-        "lower" : lower,
-        "anomaly" : anom,
+        "x": x,
+        "mean": mean,
+        "stdev": std,
+        "upper": upper,
+        "lower": lower,
+        "anomaly": anom,
     })
-
-
-
